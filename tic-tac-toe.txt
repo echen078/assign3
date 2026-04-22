@@ -1,2 +1,21 @@
-1. Created a function called Square
-2. Created nine squares and rename the function to Board
+0. Ran `./helper dev` to start the development server. Opened the app in the browser and confirmed the starter code rendered a single square with an "X".
+
+1. Inspected `src/App.jsx`. The starter code already included a Square component that returns a <button> with className="square" and text "X".
+
+2. Tried adding multiple squares by placing multiple <button> elements in the return statement. Encountered error: “Adjacent JSX elements must be wrapped in an enclosing tag.” Fixed this by wrapping elements in a fragment (<>...</>).
+
+3. Structured the board into a 3x3 grid. Created three <div className="board-row"> elements, each containing three buttons. Verified in the browser that a 3x3 grid appeared. Renamed component from Square to Board since it now represents the full grid.
+
+4. Refactored to separate components. Created a Square component that takes a `value` prop. Updated Board to render nine <Square /> components with values "1"–"9". Initially forgot curly braces when rendering the value, causing "value" to display literally. Fixed by using {value}. Verified numbers displayed correctly.
+
+5. Made squares interactive. Added an onClick handler inside Square that logged "clicked!" to the console. Confirmed clicks worked via browser console.
+
+6. Added local state to Square using `useState(null)`. Updated state to "X" on click. Verified each square independently updated when clicked.
+
+7. Lifted state up to Board. Removed state from Square and created `squares` state in Board using `Array(9).fill(null)`. Passed values and click handlers down as props. Verified board initially empty and updates correctly when clicking squares.
+
+8. Implemented turn tracking. Added `xIsNext` state in Board. Updated handleClick to alternate between "X" and "O". Added check to prevent overwriting filled squares. Verified alternating behavior in browser.
+
+9. Implemented winner detection. Wrote `calculateWinner` function to check all winning combinations. Updated handleClick to stop moves if a winner exists. Added status display showing either next player or winner. Verified game stops after a win and displays correct winner.
+
+Final result: fully functional tic-tac-toe game with turn-taking, win detection, and UI updates working correctly.

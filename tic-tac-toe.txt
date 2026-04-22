@@ -1,0 +1,2 @@
+1. Created a function called Square
+2. Created nine squares and rename the function to Board

@@ -155,6 +155,91 @@ class TestChorusLapilli(unittest.TestCase):
         tiles[0].click()
         self.assertTileIs(tiles[0], self.SYMBOL_X)
 
+    # [GenAI Use] Prompt: "write a test for my chorus lapilli game that checks X and O take turns correctly during the placement phase — click 4 different squares and check that the first and third are X and the second and fourth are O"
+    # [GenAI Use] LLM Response Start
+    def test_alternating_turns(self):
+        '''Check that X and O alternate correctly during placement.'''
+        tiles = self.driver.find_elements(By.XPATH, self.BOARD_TILE_XPATH)
+        tiles[0].click()  # X
+        tiles[1].click()  # O
+        tiles[2].click()  # X
+        tiles[3].click()  # O
+        self.assertTileIs(tiles[0], self.SYMBOL_X)
+        self.assertTileIs(tiles[1], self.SYMBOL_O)
+        self.assertTileIs(tiles[2], self.SYMBOL_X)
+        self.assertTileIs(tiles[3], self.SYMBOL_O)
+    # [GenAI Use] LLM Response End
+    # [GenAI Use] Reflection: The test clicks 4 distinct squares and checks that they alternate X, O, X, O, it's exactly what I asked for. It uses assertTileIs with the right constants. I ran it and it passed, confirming the alternation logic in handleClick works as expected.
+
+    # [GenAI Use] Prompt: "write a test that clicks the same square twice, first click should place X, second click is O's turn but the square is already taken so nothing should change, assert the square still shows X"
+    # [GenAI Use] LLM Response Start
+    def test_filled_square_not_overwritten(self):
+        '''Check that clicking an occupied square does not overwrite it.'''
+        tiles = self.driver.find_elements(By.XPATH, self.BOARD_TILE_XPATH)
+        tiles[0].click()       # X places at 0
+        tiles[0].click()       # O tries to click same square — should have no effect
+        self.assertTileIs(tiles[0], self.SYMBOL_X)
+    # [GenAI Use] LLM Response End
+    # [GenAI Use] Reflection: Clean and minimal. The second click on an occupied square maps to the `if (squares[i]) return;` guard in my placement-phase code, so the square should stay as X. Test passed and confirmed that guard works.
+
+    # [GenAI Use] Prompt: "write a test where X wins by filling the top row (with O filling row 2), then try clicking an empty square after the win and assert that square stays blank, the game should be frozen after a win"
+    # [GenAI Use] LLM Response Start
+    def test_winner_stops_game(self):
+        '''Check that no moves are accepted after a player wins.'''
+        tiles = self.driver.find_elements(By.XPATH, self.BOARD_TILE_XPATH)
+        # X wins top row: X at 0,1,2; O at 3,4
+        tiles[0].click()  # X
+        tiles[3].click()  # O
+        tiles[1].click()  # X
+        tiles[4].click()  # O
+        tiles[2].click()  # X wins
+        # Clicking an empty square after win should have no effect
+        tiles[5].click()
+        self.assertTileIs(tiles[5], self.SYMBOL_BLANK)
+    # [GenAI Use] LLM Response End
+    # [GenAI Use] Reflection: I verified the click sequence manually where X gets 0, 1, 2 (top row) and O gets 3, 4, so X wins on the 5th click with no accidental win before that. The post-win click tests the `if (calculateWinner(squares)) return;` early exit at the top of handleClick. Test passed.
+
+    # [GenAI Use] Prompt: "write a test that places 3 X pieces and 3 O pieces without triggering a win to enter full board, then selects one of X's pieces and moves it to an empty adjacent square, and asserts the old square is now blank and the new square shows X"
+    # [GenAI Use] LLM Response Start
+    def test_movement_phase(self):
+        '''Check that after 6 placements pieces can be moved to adjacent squares.'''
+        tiles = self.driver.find_elements(By.XPATH, self.BOARD_TILE_XPATH)
+        # Place without winning: X at 0,7,1 — O at 3,4,8
+        tiles[0].click()  # X
+        tiles[3].click()  # O
+        tiles[7].click()  # X
+        tiles[4].click()  # O
+        tiles[1].click()  # X
+        tiles[8].click()  # O — full board condition begins
+        # X's turn: select X at 1 (row 0, col 1), move to 2 (row 0, col 2) — adjacent
+        tiles[1].click()  # select
+        tiles[2].click()  # move
+        self.assertTileIs(tiles[1], self.SYMBOL_BLANK)
+        self.assertTileIs(tiles[2], self.SYMBOL_X)
+    # [GenAI Use] LLM Response End
+    # [GenAI Use] Reflection: I double-checked that the placement sequence (X at 0,7,1 and O at 3,4,8) produces no winner, and that indices 1 and 2 are adjacent (same row, adjacent columns). The test exercises the full board else branch in handleClick. It passed and confirmed pieces move correctly.
+
+    # [GenAI Use] Prompt: "write a test for the center constraint rule: place pieces so X ends up with a piece at center (index 4) after the full board starts, then have X try to move a different piece to a square that doesn't win the game, and assert both squares are unchanged since the move should be blocked"
+    # [GenAI Use] LLM Response Start
+    def test_center_constraint(self):
+        '''Check that a player with a piece at center must move it or win.'''
+        tiles = self.driver.find_elements(By.XPATH, self.BOARD_TILE_XPATH)
+        # X at 0,4,6 — O at 1,5,8 (no winner yet)
+        tiles[0].click()  # X
+        tiles[1].click()  # O
+        tiles[4].click()  # X (center)
+        tiles[5].click()  # O
+        tiles[6].click()  # X
+        tiles[8].click()  # O — full board condition begins
+        # X has center (4). X tries to move piece at 0 to 3:
+        # that doesn't win and doesn't vacate center, should be blocked.
+        tiles[0].click()  # select X at 0
+        tiles[3].click()  # attempt move to 3 (invalid)
+        self.assertTileIs(tiles[0], self.SYMBOL_X)   # X still at 0
+        self.assertTileIs(tiles[3], self.SYMBOL_BLANK)  # 3 still empty
+    # [GenAI Use] LLM Response End
+    # [GenAI Use] Reflection: I traced through the placement to confirm X has pieces at 0, 4, 6 and O at 1, 5, 8 with no winner. Moving X from 0 to 3 is geometrically adjacent (row 0 col 0 → row 1 col 0), so it would normally be valid — but the center constraint blocks it since it neither vacates index 4 nor produces a win. The test correctly isolates that specific guard in the code, and it passed.
+
 
 # ================= [DO NOT MAKE ANY CHANGES BELOW THIS LINE] =================
 

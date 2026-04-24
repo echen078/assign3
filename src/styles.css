@@ -86,3 +86,8 @@ ul {
 .game-info {
   margin-left: 20px;
 }
+
+.square.selected {
+  background: #b3d9ff;
+  outline: 2px solid #0066cc;
+}

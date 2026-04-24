@@ -1,0 +1,39 @@
+Starting point: the completed tic-tac-toe implementation in src/App.jsx. Commented out the tic-tac-toe code and wrote the chorus lapilli code below it in the same file.
+
+Chorus lapilli rules to implement on top of tic-tac-toe:
+1. Each player places up to 3 pieces (placement phase, first 6 moves total).
+2. After both players have 3 pieces, the game enters movement phase: instead of placing new pieces, the current player selects one of their existing pieces and moves it to an adjacent empty square (up, down, left, right, or diagonal).
+3. Center constraint: if it is the current player's turn to move and they have a piece at the center square (index 4), their move must either win the game or vacate the center square.
+
+1. Added selectedSquare state (null or a board index) to Board to track which piece is selected during the movement phase. Also computed xCount and oCount by filtering the squares array, and derived movementPhase = xCount >= 3 && oCount >= 3.
+
+2. Rewrote handleClick to branch on movementPhase:
+   - Placement phase (movementPhase false): same logic as tic-tac-toe — return early if the square is occupied, otherwise place the current player's symbol and flip xIsNext.
+   - Movement phase (movementPhase true):
+     a. If no piece is selected: clicking the current player's own piece sets selectedSquare to that index. Clicking any other square is ignored.
+     b. If a piece is selected: clicking the same square deselects it; clicking another of the current player's pieces changes the selection; clicking an empty adjacent square attempts a move (see step 3). Clicking a non-adjacent or occupied non-own square is ignored.
+
+3. Added the isAdjacent(a, b) helper outside Board. It converts flat indices to (row, col) using Math.floor(a/3) and a%3, then checks that both the row and column differences are at most 1 and the squares are distinct.
+
+4. Implemented the center constraint inside the movement branch: after building nextSquares (the proposed board after the move), if the current player currently has a piece at index 4, the move is only allowed if selectedSquare === 4 (the piece being moved is the one at center, so center is vacated) or calculateWinner(nextSquares) is non-null (the move wins). Otherwise, return early without updating state.
+
+5. Updated the Square component to accept an isSelected prop and add the CSS class "selected" when true (className={'square' + (isSelected ? ' selected' : '')}). Board passes isSelected={selectedSquare === i} to each Square.
+
+6. Added .square.selected CSS rule to src/styles.css giving selected squares a light blue background (#b3d9ff) and a blue outline, so the player can see which piece is currently selected.
+
+7. Updated the status display: during the movement phase the status reads "Move a piece: X/O" instead of "Next player: X/O", to make it clear to the player what action is expected.
+
+8. Ran ./helper dev and tested manually in the browser:
+   - Placement phase works correctly, alternating X and O.
+   - After 6 placements the status switches to "Move a piece".
+   - Clicking a piece highlights it; clicking an adjacent empty square moves it; the old square becomes empty.
+   - Clicking a non-adjacent empty square or an opponent's piece during movement phase has no effect.
+   - Center constraint: when X has a piece at center and tries to move a different piece without winning, the move is blocked. Moving the center piece itself is allowed.
+   - Win detection still works in both phases.
+
+9. Wrote five tests in test_chorus_lapilli.py (in addition to the two provided):
+   - test_alternating_turns: clicks four squares and verifies X/O alternate correctly.
+   - test_filled_square_not_overwritten: clicks the same square twice and verifies the second click (O's turn) does not overwrite X.
+   - test_winner_stops_game: makes X win the top row, then clicks an empty square and verifies it remains empty.
+   - test_movement_phase: places 6 pieces without triggering a win (X at 0,7,1; O at 3,4,8), then selects X at index 1 and moves it to index 2 (adjacent), verifying index 1 becomes blank and index 2 becomes X.
+   - test_center_constraint: places 6 pieces with X at center (X at 0,4,6; O at 1,5,8), then attempts to move X from index 0 to index 3 (which neither wins nor vacates center), and verifies the board is unchanged.
